@@ -24,10 +24,10 @@ extern "C" {
 #include <task.h>
 #include <queue.h>
 #include <semphr.h>
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpointer-sign"
-#include <timers.h>
-#pragma GCC diagnostic pop
+
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Wpointer-sign"
+//#pragma GCC diagnostic pop
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -37,7 +37,6 @@ extern "C" {
 #include <stdint.h>
 #include <strings.h>
 #include <limits.h>
-
 
 //#define CEXCEPTION_USE_CONFIG_FILE
 //#include "CException.h"

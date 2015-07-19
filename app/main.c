@@ -5,16 +5,47 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/cm3/scb.h>
+#include <libopencm3/cm3/systick.h>
+#include <libopencm3/cm3/nvic.h>
+
+
+
 #include <stdio.h>
 
+uint32_t SystemCoreClock;
+xTaskHandle *xLED1TaskHandle;
+xTaskHandle *xLED2TaskHandle;
+
 void Delay(volatile uint32_t nCount);
-extern void SystemInit(void);
+
+static portTASK_FUNCTION(vLEDTask1, pvParameters)
+{
+  (void)(pvParameters);//unused params
+  while(1) {
+    vTaskDelay(300/portTICK_RATE_MS);
+    gpio_toggle(GPIOD, GPIO12);
+  }
+}
+
+
+static portTASK_FUNCTION(vLEDTask2, pvParameters)
+{
+  (void)(pvParameters);//unused params
+  while(1) {
+    vTaskDelay(500/portTICK_RATE_MS);
+    gpio_toggle(GPIOD, GPIO13);
+  }
+}
+
+
+
+
 int main(void)
 {
-  
-//Blue pushbutton (B1) is PA0
-//Black pushbutton (B2) is NRST
-/* Configure LEDs ... PD12, PD13, PD14 and PD15 in output pushpull mode */
+  portBASE_TYPE qStatus = pdPASS;   // = 1, this, and pdFAIL = 0, are in projdefs.h
+  //Blue pushbutton (B1) is PA0
+  //Black pushbutton (B2) is NRST
+  /* Configure LEDs ... PD12, PD13, PD14 and PD15 in output pushpull mode */
   //PD12 - Green
   //PD13 - Orange
   //PD14 - Red
@@ -23,16 +54,41 @@ int main(void)
   // Now setup the clocks ...
   // Discovery is 8MHz crystal, use 120MHz core
   rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_120MHZ]);
-    rcc_periph_clock_enable(RCC_GPIOD);
+  SystemCoreClock = 120000000;
 
+  // Setup GPIO D
+  rcc_periph_clock_enable(RCC_GPIOD);
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12|GPIO13|GPIO14|GPIO15);
-  //gpio_set_output_options(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO12|GPIO13|GPIO14|GPIO15);
+  gpio_set_output_options(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO12|GPIO13|GPIO14|GPIO15);
   gpio_set(GPIOD, GPIO12|GPIO13|GPIO14|GPIO15);
   Delay(0x8FFFFF);
   gpio_clear(GPIOD, GPIO12|GPIO13|GPIO14|GPIO15);
-  Delay(0x8FFFFF);
-  gpio_set(GPIOD, GPIO15|GPIO12);
-    
+
+  // Create tasks
+  qStatus = xTaskCreate(vLEDTask1, "LED Task 1", 2048, NULL, (tskIDLE_PRIORITY + 1UL),
+                        (xTaskHandle *) &xLED1TaskHandle);
+
+
+  qStatus = xTaskCreate(vLEDTask2, "LED Task 2", 2048, NULL, (tskIDLE_PRIORITY + 1UL),
+                        (xTaskHandle *) &xLED2TaskHandle);
+
+  
+  (void) qStatus;
+
+  
+  // start the scheduler
+  vTaskStartScheduler();
+  /* Control should never come here */
+  //DEBUGSTR("Scheduler Failure\n");
+  while (1) {}
+
+  return 1;
+
+
+  /* this done last */
+  //systick_interrupt_enable();
+
+  
   while (1) {
     gpio_toggle(GPIOD, GPIO15|GPIO12|GPIO13|GPIO14);
     Delay(0x8FFFFF);

@@ -83,11 +83,8 @@
  * See http://www.freertos.org/a00110.html.
  *----------------------------------------------------------*/
 
-/* Ensure stdint is only used by the compiler, and not the assembler. */
-//#ifdef __ICCARM__
-	#include <stdint.h>
-	extern uint32_t SystemCoreClock;
-//#endif
+#include <stdint.h>
+extern uint32_t SystemCoreClock;
 
 #define configUSE_PREEMPTION			1
 #define configUSE_IDLE_HOOK				1
@@ -161,9 +158,9 @@ header file. */
 	
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
 standard names. */
-#define vPortSVCHandler SVC_Handler
-#define xPortPendSVHandler PendSV_Handler
-#define xPortSysTickHandler SysTick_Handler
+#define vPortSVCHandler sv_call_handler
+#define xPortPendSVHandler pend_sv_handler
+#define xPortSysTickHandler sys_tick_handler
 
 #endif /* FREERTOS_CONFIG_H */
 
