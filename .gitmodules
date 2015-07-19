@@ -1,0 +1,9 @@
+[submodule "external/FreeRTOS"]
+	path = external/FreeRTOS
+	url = https://github.com/mikef5410/FreeRTOS.git
+[submodule "external/CException"]
+	path = external/CException
+	url = https://github.com/ThrowTheSwitch/CException.git
+[submodule "external/libopencm3"]
+	path = external/libopencm3
+	url = https://github.com/libopencm3/libopencm3.git

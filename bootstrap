@@ -1,0 +1,11 @@
+#!/bin/bash
+
+git submodule init
+git submodule update
+
+freertos=external/FreeRTOS/FreeRTOS
+mkdir -p FreeRTOS/Source/portable/GCC
+cp ${freertos}/Source/* FreeRTOS/Source
+cp -R ${freertos}/Source/include FreeRTOS/Source
+cp -R ${freertos}/Source/portable/GCC/ARM_CM* FreeRTOS/Source/portable/GCC
+cp -R ${freertos}/Source/portable/MemMang FreeRTOS/Source/portable
