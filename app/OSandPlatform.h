@@ -62,8 +62,8 @@ extern "C" {
 #define unlikely(x)     __builtin_expect((x),0)
 
 //Trigger a HARD FAULT by writing to a FLASH ROM location
-//#define TRIG_HARDFAULT *((volatile int*)(0x14017644))=0
-
+#define TRIG_HARDFAULT *((volatile int*)(0x8000000))=0
+    
 //We'll define this later
     typedef void BaseSequentialStream;
 
@@ -74,6 +74,8 @@ extern "C" {
     extern int mysprintf(char *out, const char *format, ...);
     extern int mysnprintf(char *buf, unsigned int count,
 			  const char *format, ...);
+
+#define ENABLE_DEBUG_TASK 1
 
 #ifdef RELEASE
 #define DPRINTF(...)

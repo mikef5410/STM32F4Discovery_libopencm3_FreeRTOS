@@ -8,22 +8,32 @@
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/nvic.h>
 
-
+#include "debug_shell.h"
 
 #include <stdio.h>
 
 uint32_t SystemCoreClock;
 xTaskHandle *xLED1TaskHandle;
 xTaskHandle *xLED2TaskHandle;
+xTaskHandle *xUSBCDCACMTaskHandle;
+xTaskHandle *xDebugShellTaskHandle;
+
+extern void Board_UARTPutSTR(const char *str);
 
 void Delay(volatile uint32_t nCount);
+
+extern portTASK_FUNCTION(vUSBCDCACMTask, pvParameters); //in cdcacm.c
 
 static portTASK_FUNCTION(vLEDTask1, pvParameters)
 {
   (void)(pvParameters);//unused params
+  uint32_t cnt=0;
   while(1) {
+    cnt++;
     vTaskDelay(300/portTICK_RATE_MS);
-    gpio_toggle(GPIOD, GPIO12);
+    gpio_set(GPIOD, GPIO12);
+    vTaskDelay(20/portTICK_RATE_MS);
+    gpio_clear(GPIOD, GPIO12);
   }
 }
 
@@ -33,11 +43,51 @@ static portTASK_FUNCTION(vLEDTask2, pvParameters)
   (void)(pvParameters);//unused params
   while(1) {
     vTaskDelay(500/portTICK_RATE_MS);
-    gpio_toggle(GPIOD, GPIO13);
+    gpio_set(GPIOD, GPIO13);
+    vTaskDelay(30/portTICK_RATE_MS);
+    gpio_clear(GPIOD, GPIO13);
   }
 }
 
+void greenOn(int on)
+{
+  if (on) {
+    gpio_set(GPIOD,GPIO12);
+  } else {
+    gpio_clear(GPIOD,GPIO12);
+  }
+  return;
+}
 
+void orangeOn(int on)
+{
+  if (on) {
+    gpio_set(GPIOD,GPIO13);
+  } else {
+    gpio_clear(GPIOD,GPIO13);
+  }
+  return;
+}
+
+void redOn(int on)
+{
+  if (on) {
+    gpio_set(GPIOD,GPIO14);
+  } else {
+    gpio_clear(GPIOD,GPIO14);
+  }
+  return;
+}
+
+void blueOn(int on)
+{
+  if (on) {
+    gpio_set(GPIOD,GPIO15);
+  } else {
+    gpio_clear(GPIOD,GPIO15);
+  }
+  return;
+}
 
 
 int main(void)
@@ -56,6 +106,15 @@ int main(void)
   rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_120MHZ]);
   SystemCoreClock = 120000000;
 
+  // Setup USBOTG Clocking and pins
+  rcc_periph_clock_enable(RCC_GPIOA);
+  rcc_periph_clock_enable(RCC_OTGFS);
+  
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE,
+                  GPIO9 | GPIO11 | GPIO12);
+  gpio_set_af(GPIOA, GPIO_AF10, GPIO9 | GPIO11 | GPIO12);
+  
+  
   // Setup GPIO D
   rcc_periph_clock_enable(RCC_GPIOD);
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12|GPIO13|GPIO14|GPIO15);
@@ -71,6 +130,15 @@ int main(void)
 
   qStatus = xTaskCreate(vLEDTask2, "LED Task 2", 2048, NULL, (tskIDLE_PRIORITY + 1UL),
                         (xTaskHandle *) &xLED2TaskHandle);
+
+
+  qStatus = xTaskCreate(vUSBCDCACMTask, "USB Serial Task", 2048, NULL, (tskIDLE_PRIORITY + 1UL),
+                        (xTaskHandle *) &xUSBCDCACMTaskHandle);
+
+  qStatus = xTaskCreate(vDebugShell, "Debug shell", 2048, NULL, (tskIDLE_PRIORITY + 1UL),
+                        (xTaskHandle *) &xDebugShellTaskHandle);
+
+  
 
   
   (void) qStatus;

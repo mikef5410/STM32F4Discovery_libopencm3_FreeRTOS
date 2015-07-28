@@ -105,7 +105,8 @@ extern uint32_t SystemCoreClock;
 #define configUSE_MALLOC_FAILED_HOOK	1
 #define configUSE_APPLICATION_TASK_TAG	0
 #define configUSE_COUNTING_SEMAPHORES	1
-#define configGENERATE_RUN_TIME_STATS	0
+#define configGENERATE_RUN_TIME_STATS	1
+#define configUSE_STATS_FORMATTING_FUNCTIONS 1
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES 		0
@@ -161,6 +162,12 @@ standard names. */
 #define vPortSVCHandler sv_call_handler
 #define xPortPendSVHandler pend_sv_handler
 #define xPortSysTickHandler sys_tick_handler
+
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()  {}
+#define portGET_RUN_TIME_COUNTER_VALUE() (1);/*tics2us(hiresTimer_getTime())*/
+#define printf(...) myprintf(__VA_ARGS__)
+#define sprintf(...) mysprintf(__VA_ARGS__)
+#define snprintf(...) mysnprintf(__VA_ARGS__)
 
 #endif /* FREERTOS_CONFIG_H */
 
