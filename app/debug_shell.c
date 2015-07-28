@@ -296,11 +296,28 @@ int cmd_taskstats(int argc, char **argv)
   return(0);
 }
 
+extern char __heap_start;	/* Setup in our linker script */
+extern char __heap_end;
 int cmd_mallocstats(int argc, char **argv)
 {
   struct mallinfo current;
   current=mallinfo();
   myprintf("Heap memory currently in use: %d bytes\n", current.uordblks);
+  myprintf("Total free space: %d bytes\n",current.fordblks);
+  myprintf("Heap start: 0x%08x, Heap end: 0x%08x, size: %d\n",&__heap_start,&__heap_end,
+           &__heap_end - &__heap_start );
+
+#if 0  
+  int tot=0;
+  for (;;) {
+    myprintf("Allocating 1k bytes: ");
+    void *leak=malloc(1024);
+    myprintf(leak==0 ? "FAIL\n" : "OK\n");
+    if (leak==0) break;
+    tot++;
+  }
+  printf("Total: %d\n",tot);
+#endif  
   return(0);
 }
 

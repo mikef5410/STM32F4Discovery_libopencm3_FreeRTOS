@@ -47,7 +47,6 @@ void *_sbrk_r(struct _reent *_s_r
     //errno=ENOMEM;
     return ((void *) -1);	/* Failure out of mem, We should set errno to ENOMEM, too */
   }
-
   heap_ptr = new_heap_ptr;	/*  Increase heap.                              */
 
   return base;			/*  Return pointer to start of new heap area.   */

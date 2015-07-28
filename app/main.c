@@ -124,18 +124,19 @@ int main(void)
   gpio_clear(GPIOD, GPIO12|GPIO13|GPIO14|GPIO15);
 
   // Create tasks
-  qStatus = xTaskCreate(vLEDTask1, "LED Task 1", 2048, NULL, (tskIDLE_PRIORITY + 1UL),
+  // remember, stack size is in 32-bit words and is allocated from the heap ...
+  qStatus = xTaskCreate(vLEDTask1, "LED Task 1", 64, NULL, (tskIDLE_PRIORITY + 1UL),
                         (xTaskHandle *) &xLED1TaskHandle);
 
 
-  qStatus = xTaskCreate(vLEDTask2, "LED Task 2", 2048, NULL, (tskIDLE_PRIORITY + 1UL),
+  qStatus = xTaskCreate(vLEDTask2, "LED Task 2", 64, NULL, (tskIDLE_PRIORITY + 1UL),
                         (xTaskHandle *) &xLED2TaskHandle);
 
 
-  qStatus = xTaskCreate(vUSBCDCACMTask, "USB Serial Task", 2048, NULL, (tskIDLE_PRIORITY + 1UL),
+  qStatus = xTaskCreate(vUSBCDCACMTask, "USB Serial Task", 64, NULL, (tskIDLE_PRIORITY + 1UL),
                         (xTaskHandle *) &xUSBCDCACMTaskHandle);
 
-  qStatus = xTaskCreate(vDebugShell, "Debug shell", 2048, NULL, (tskIDLE_PRIORITY + 1UL),
+  qStatus = xTaskCreate(vDebugShell, "Debug shell", 1024, NULL, (tskIDLE_PRIORITY + 1UL),
                         (xTaskHandle *) &xDebugShellTaskHandle);
 
   
