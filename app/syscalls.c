@@ -8,10 +8,8 @@
 #include <sys/stat.h>
 #include <string.h>
 #include "OSandPlatform.h"
-#include <libopencm3/usb/usbd.h>
 
 #define EOF (-1)
-extern usbd_device *CDCACM_dev;
 int Board_UARTGetChar(void);
 void Board_UARTPutChar(char ch);
 void Board_UARTPutSTR(char *str);
@@ -104,7 +102,8 @@ int _open(const char *name __attribute__ ((unused)), int flags
 }
 
 
-extern xQueueHandle UARTinQ;
+extern xQueueHandle ACMinQ;
+extern xQueueHandle ACMoutQ;
 
 int _read(int file __attribute__ ((unused)), char *ptr, int len)
 {
@@ -114,9 +113,9 @@ int _read(int file __attribute__ ((unused)), char *ptr, int len)
 
   if (len == 0)
     return 0;
-  if (UARTinQ) {		// Is the FreeRTOS input Queue setup?
+  if (ACMinQ) {		// Is the FreeRTOS input Queue setup?
     for (todo = 1; todo <= len; todo++) {
-      xQueueReceive(UARTinQ, &rxin, portMAX_DELAY);
+      xQueueReceive(ACMinQ, &rxin, portMAX_DELAY);
       *ptr++ = (char) rxin;
     }
   } else {
@@ -131,74 +130,22 @@ int _read(int file __attribute__ ((unused)), char *ptr, int len)
   return todo;
 }
 
-// Simple ring buffer for _write to use when there's no place
-// to put the outgoing string ...
-#define BUFSIZ 64
-struct ringBuffer {
-  char buffer[BUFSIZ];
-  uint32_t startPos;
-  uint32_t writePos;
-  uint32_t size;
-} ringBuffer;
-
-void enq(char *ptr, int len)
-{
-  for (int k=0; k<len; k++) {
-    ringBuffer.buffer[(ringBuffer.writePos++) % BUFSIZ]=*(ptr + k);
-    ringBuffer.size = (ringBuffer.size + 1) % BUFSIZ;
-  }
-}
-
-int deq(char *ch)
-{
-  if (ringBuffer.size) {
-    *ch = ringBuffer.buffer[ringBuffer.startPos];
-    ringBuffer.size--;
-    ringBuffer.startPos = (ringBuffer.startPos + 1) % BUFSIZ;
-    return(1);
-  } else {
-    return(-1);
-  }
-}
-
-int sendPacket(void)
-{
-  int rval=0;
-  rval = usbd_ep_write_packet(CDCACM_dev, 0x82, ringBuffer.buffer + ringBuffer.startPos, ringBuffer.size);
-  if (rval != 0 ) { //Then the packet went out ...
-    ringBuffer.startPos=0;
-    ringBuffer.writePos=0;
-    ringBuffer.size=0;
-  }
-  return(rval);
-}
 
 //Write to CDCACM device ...
-#define MAXDELAY 10
 int _write(int file __attribute__ ((unused)), char *ptr, int len)
 {
   int todo;
-  
-  //Our max packet size is 64 bytes. We'll chunk into 64 byte pieces
-  //and send it out.
-  
-  //  Chip_UART_Send(DEBUG_UART, ptr, len, BLOCKING);
-  //  return len;
-  for (todo = 0; todo < len; todo++) {
-    if (*(ptr + todo) == '\n') {	// ONLCR output line discipline
-      enq("\r",1);
-      if (ringBuffer.size==64) { //Did we just fill a packet??
-        sendPacket();
+
+  if (file == 0) {		//stdout
+    if (!ACMoutQ) return 0;
+    for (todo = 0; todo < len; todo++) {
+      if (*(ptr + todo) == '\n') {	// ONLCR output line discipline
+	while (errQUEUE_FULL==xQueueSend(ACMoutQ, "\r", 2)) ;
       }
-    }
-    enq((ptr+todo),1);
-    if (ringBuffer.size==64) { //Did we just fill a packet??
-      sendPacket();
+      while (errQUEUE_FULL==xQueueSend(ACMoutQ, (ptr + todo), 2)) ;
     }
   }
-  //Final partial-full write
-  sendPacket();
-  return len; //We wrote it all
+  return len;			//We wrote it all
 }
 
 
@@ -207,19 +154,21 @@ int Board_UARTGetChar(void)
 {
   char inch;
   portBASE_TYPE rval;
-  if (uxQueueMessagesWaiting(UARTinQ)) {
-    rval = xQueueReceive(UARTinQ,(void *)&inch,0);
-    if (rval == pdPASS) return(inch);
-    if (rval == errQUEUE_EMPTY) return(EOF);
+  if (uxQueueMessagesWaiting(ACMinQ)) {
+    rval = xQueueReceive(ACMinQ, (void *) &inch, 0);
+    if (rval == pdPASS)
+      return (inch);
+    if (rval == errQUEUE_EMPTY)
+      return (EOF);
   }
-  return(EOF);
+  return (EOF);
 }
 
 void Board_UARTPutChar(char val)
 {
   char buf[64];
-  buf[0]=val;
-  while (usbd_ep_write_packet(CDCACM_dev, 0x82, buf, 1) == 0) ;
+  buf[0] = val;
+  while (errQUEUE_FULL==xQueueSend(ACMoutQ, buf, 2)) ;
 }
 
 

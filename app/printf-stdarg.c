@@ -295,3 +295,5 @@ int write(int i, char *c, int n)
   (void) c;
   return 0;
 }
+
+
