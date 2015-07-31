@@ -103,6 +103,7 @@ int _open(const char *name __attribute__ ((unused)), int flags
   return -1;
 }
 
+// Emulate a debug uart with CDCACM usb device
 
 extern xQueueHandle UARTinQ;
 
@@ -134,47 +135,37 @@ int _read(int file __attribute__ ((unused)), char *ptr, int len)
 // Simple ring buffer for _write to use when there's no place
 // to put the outgoing string ...
 #define BUFSIZ 64
-struct ringBuffer {
+static struct ringBuffer {
   char buffer[BUFSIZ];
-  uint32_t startPos;
-  uint32_t writePos;
+  uint32_t rPtr;
+  uint32_t wPtr;
   uint32_t size;
-} ringBuffer;
+} ringBuffer = { .rPtr=0, .wPtr=0, .size=0 };
 
-void enq(char *ptr, int len)
+static void enq(char *ptr, int len)
 {
   for (int k=0; k<len; k++) {
-    ringBuffer.buffer[(ringBuffer.writePos++) % BUFSIZ]=*(ptr + k);
+    ringBuffer.buffer[ringBuffer.wPtr]=*(ptr + k);
+    ringBuffer.wPtr = (ringBuffer.wPtr + 1) % BUFSIZ;
     ringBuffer.size = (ringBuffer.size + 1) % BUFSIZ;
   }
 }
 
-int deq(char *ch)
-{
-  if (ringBuffer.size) {
-    *ch = ringBuffer.buffer[ringBuffer.startPos];
-    ringBuffer.size--;
-    ringBuffer.startPos = (ringBuffer.startPos + 1) % BUFSIZ;
-    return(1);
-  } else {
-    return(-1);
-  }
-}
-
-int sendPacket(void)
+static int sendPacket(void)
 {
   int rval=0;
-  rval = usbd_ep_write_packet(CDCACM_dev, 0x82, ringBuffer.buffer + ringBuffer.startPos, ringBuffer.size);
+  rval = usbd_ep_write_packet(CDCACM_dev, 0x82,
+                              ringBuffer.buffer + ringBuffer.rPtr,
+                              ringBuffer.size);
   if (rval != 0 ) { //Then the packet went out ...
-    ringBuffer.startPos=0;
-    ringBuffer.writePos=0;
+    ringBuffer.rPtr=0;
+    ringBuffer.wPtr=0;
     ringBuffer.size=0;
   }
   return(rval);
 }
 
 //Write to CDCACM device ...
-#define MAXDELAY 10
 int _write(int file __attribute__ ((unused)), char *ptr, int len)
 {
   int todo;
@@ -182,23 +173,25 @@ int _write(int file __attribute__ ((unused)), char *ptr, int len)
   //Our max packet size is 64 bytes. We'll chunk into 64 byte pieces
   //and send it out.
   
-  //  Chip_UART_Send(DEBUG_UART, ptr, len, BLOCKING);
-  //  return len;
-  for (todo = 0; todo < len; todo++) {
-    if (*(ptr + todo) == '\n') {	// ONLCR output line discipline
-      enq("\r",1);
+  if ( file == 0) { //stdout
+    for (todo = 0; todo < len; todo++) {
+      if (*(ptr + todo) == '\n') {	// ONLCR output line discipline
+        enq("\r",1);
+        if (ringBuffer.size==64) { //Did we just fill a packet??
+          sendPacket();
+        }
+      }
+      enq((ptr+todo),1);
       if (ringBuffer.size==64) { //Did we just fill a packet??
         sendPacket();
       }
     }
-    enq((ptr+todo),1);
-    if (ringBuffer.size==64) { //Did we just fill a packet??
-      sendPacket();
-    }
+    //Final partial-full write
+    sendPacket();
+    return len; //We wrote it all
   }
-  //Final partial-full write
-  sendPacket();
-  return len; //We wrote it all
+
+  return 0;
 }
 
 
@@ -217,19 +210,8 @@ int Board_UARTGetChar(void)
 
 void Board_UARTPutChar(char val)
 {
-  char buf[64];
-  buf[0]=val;
-  while (usbd_ep_write_packet(CDCACM_dev, 0x82, buf, 1) == 0) ;
+  _write(0, &val, 1);
 }
-
-
-/* Sends a character on the UART */
-//void Board_UARTPutChar(char ch)
-//{
-
-//  ch++;
-  //while (Chip_UART_SendByte(DEBUG_UART, (uint8_t) ch) == ERROR) {}
-//}
 
 /* Outputs a string on the debug UART */
 void Board_UARTPutSTR(char *str)
