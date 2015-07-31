@@ -123,6 +123,13 @@ int main(void)
   Delay(0x8FFFFF);
   gpio_clear(GPIOD, GPIO12|GPIO13|GPIO14|GPIO15);
 
+  //Fixup NVIC for FreeRTOS ...
+  const uint32_t interrupt_priority_group4 = (0x3 << 8); // 15 priority interrupts, no sub-priorities
+  scb_set_priority_grouping(interrupt_priority_group4);
+  for (int irqNum=0; irqNum<=NVIC_IRQ_COUNT ; irqNum++) {
+    nvic_set_priority(irqNum, 0x4f);
+  }
+  
   // Create tasks
   // remember, stack size is in 32-bit words and is allocated from the heap ...
   qStatus = xTaskCreate(vLEDTask1, "LED Task 1", 64, NULL, (tskIDLE_PRIORITY + 1UL),
@@ -138,30 +145,15 @@ int main(void)
 
   qStatus = xTaskCreate(vDebugShell, "Debug shell", 1024, NULL, (tskIDLE_PRIORITY + 1UL),
                         (xTaskHandle *) &xDebugShellTaskHandle);
-
-  
-
   
   (void) qStatus;
 
-  
   // start the scheduler
   vTaskStartScheduler();
+
   /* Control should never come here */
   //DEBUGSTR("Scheduler Failure\n");
   while (1) {}
-
-  return 1;
-
-
-  /* this done last */
-  //systick_interrupt_enable();
-
-  
-  while (1) {
-    gpio_toggle(GPIOD, GPIO15|GPIO12|GPIO13|GPIO14);
-    Delay(0x8FFFFF);
-  }
 }
   
 void Delay(volatile uint32_t nCount)
