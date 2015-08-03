@@ -9,6 +9,7 @@
 #include <libopencm3/cm3/nvic.h>
 
 #include "debug_shell.h"
+#include "hiresTimer.h"
 
 #include <stdio.h>
 
@@ -128,7 +129,8 @@ int main(void)
   gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO7);
   gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO7);
 
-
+  init_hiresTimer();
+  
   
 #if 1
   //Fixup NVIC for FreeRTOS ...

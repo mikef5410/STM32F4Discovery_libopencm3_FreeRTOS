@@ -84,6 +84,7 @@
  *----------------------------------------------------------*/
 
 #include <stdint.h>
+
 extern uint32_t SystemCoreClock;
 
 #define configUSE_PREEMPTION			1
@@ -166,8 +167,11 @@ standard names. */
 #define xPortPendSVHandler pend_sv_handler
 #define xPortSysTickHandler sys_tick_handler
 
+extern int32_t tics2us(int64_t delta_tics);
+extern uint64_t hiresTimer_getTime(void);
+
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()  {}
-#define portGET_RUN_TIME_COUNTER_VALUE() (1);/*tics2us(hiresTimer_getTime())*/
+#define portGET_RUN_TIME_COUNTER_VALUE() (tics2us(hiresTimer_getTime()))
 #define printf(...) myprintf(__VA_ARGS__)
 #define sprintf(...) mysprintf(__VA_ARGS__)
 #define snprintf(...) mysnprintf(__VA_ARGS__)
