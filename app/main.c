@@ -43,9 +43,9 @@ static portTASK_FUNCTION(vLEDTask2, pvParameters)
   (void)(pvParameters);//unused params
   while(1) {
     vTaskDelay(500/portTICK_RATE_MS);
-    gpio_set(GPIOD, GPIO13);
+    gpio_set(GPIOD, GPIO12);
     vTaskDelay(30/portTICK_RATE_MS);
-    gpio_clear(GPIOD, GPIO13);
+    gpio_clear(GPIOD, GPIO12);
   }
 }
 
@@ -115,21 +115,36 @@ int main(void)
   gpio_set_af(GPIOA, GPIO_AF10, GPIO9 | GPIO11 | GPIO12);
   
   
-  // Setup GPIO D
+  // Setup GPIO D for LEDs
   rcc_periph_clock_enable(RCC_GPIOD);
+  rcc_periph_clock_enable(RCC_GPIOC);
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12|GPIO13|GPIO14|GPIO15);
   gpio_set_output_options(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO12|GPIO13|GPIO14|GPIO15);
   gpio_set(GPIOD, GPIO12|GPIO13|GPIO14|GPIO15);
   Delay(0x8FFFFF);
   gpio_clear(GPIOD, GPIO12|GPIO13|GPIO14|GPIO15);
 
+  // 'Scope probe on GPIOC-7
+  gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO7);
+  gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO7);
+
+
+  
+#if 1
   //Fixup NVIC for FreeRTOS ...
   const uint32_t interrupt_priority_group4 = (0x3 << 8); // 15 priority interrupts, no sub-priorities
   scb_set_priority_grouping(interrupt_priority_group4);
   for (int irqNum=0; irqNum<=NVIC_IRQ_COUNT ; irqNum++) {
-    nvic_set_priority(irqNum, 0x4f);
+    nvic_set_priority(irqNum, 0x6f);
   }
+  nvic_set_priority(-4,0); //MMU Fault
+  nvic_set_priority(-5,0); //Bus Fault
+  nvic_set_priority(-6,0); //Usage Fault
+  nvic_set_priority(-11,0); //SVCall
+  nvic_set_priority(-14,0); //PendSV
+  nvic_set_priority(-15,0); //SysTick
   
+#endif  
   // Create tasks
   // remember, stack size is in 32-bit words and is allocated from the heap ...
   qStatus = xTaskCreate(vLEDTask1, "LED Task 1", 64, NULL, (tskIDLE_PRIORITY + 1UL),

@@ -23,10 +23,12 @@
 #include <libopencm3/usb/usbd.h>
 #include <libopencm3/usb/cdc.h>
 #include <libopencm3/cm3/scb.h>
+#include <libopencm3/stm32/f4/nvic.h>
+#include <libopencm3/stm32/gpio.h>
 
 xQueueHandle UARTinQ;
 usbd_device *CDCACM_dev;
-uint32_t usbInitialized=0;
+static xSemaphoreHandle usbInterrupted = NULL;
 
 static const struct usb_device_descriptor dev = {
   .bLength = USB_DT_DEVICE_SIZE,
@@ -232,7 +234,16 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
                                  USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE,
                                  USB_REQ_TYPE_TYPE | USB_REQ_TYPE_RECIPIENT,
                                  cdcacm_control_request);
-  usbInitialized=1;
+}
+
+void otg_fs_isr(void) __attribute__ ((interrupt ));
+void otg_fs_isr(void)
+{
+  portBASE_TYPE HPTw = pdFALSE;
+
+  nvic_disable_irq(NVIC_OTG_FS_IRQ);
+  xSemaphoreGiveFromISR(usbInterrupted, &HPTw);
+  portEND_SWITCHING_ISR( HPTw );
 }
 
 
@@ -250,8 +261,17 @@ portTASK_FUNCTION(vUSBCDCACMTask, pvParameters)
   usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
   CDCACM_dev=usbd_dev;
 
+  vSemaphoreCreateBinary(usbInterrupted);
+  //Take the semaphore nonblocking to ensure in the correct state
+  xSemaphoreTake(usbInterrupted,0);
+
+  nvic_set_priority(NVIC_OTG_FS_IRQ,0xdf);
+  nvic_enable_irq(NVIC_OTG_FS_IRQ);
+
   while (1) {
-    usbd_poll(usbd_dev);
-    taskYIELD();
+    if (pdPASS == xSemaphoreTake(usbInterrupted,portMAX_DELAY)) {
+      usbd_poll(usbd_dev);
+      nvic_enable_irq(NVIC_OTG_FS_IRQ);
+    }
   }
 }
