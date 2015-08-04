@@ -48,6 +48,7 @@ extern "C" {
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/usb/usbd.h>
+#include <libopencm3/stm32/flash.h>
 
 #include "hiresTimer.h"
   

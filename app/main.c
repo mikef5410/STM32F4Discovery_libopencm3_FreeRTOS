@@ -82,6 +82,23 @@ void blueOn(int on)
   return;
 }
 
+#define TEST96
+#ifdef TEST96
+const clock_scale_t testClock = {
+  //96 MHz, 8MHz crystal
+  .pllm = 2,
+  .plln = 48,
+  .pllp = 2,
+  .pllq = 4, 
+  .hpre = RCC_CFGR_HPRE_DIV_NONE,
+  .ppre1 = RCC_CFGR_PPRE_DIV_4,
+  .ppre2 = RCC_CFGR_PPRE_DIV_2,
+  .flash_config = FLASH_ACR_ICE | FLASH_ACR_DCE |
+  FLASH_ACR_LATENCY_3WS,
+  .apb1_frequency = 24000000,
+  .apb2_frequency = 48000000,
+};
+#endif
 
 int main(void)
 {
@@ -95,9 +112,15 @@ int main(void)
   //PD15 - Blue
 
   // Now setup the clocks ...
+#ifndef TEST96  
   // Discovery is 8MHz crystal, use 120MHz core
   rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_120MHZ]);
   SystemCoreClock = 120000000;
+#else
+  // Use 96MHz core
+  rcc_clock_setup_hse_3v3(&testClock);
+  SystemCoreClock = 96000000;
+#endif
 
   // Setup USBOTG Clocking and pins
   rcc_periph_clock_enable(RCC_GPIOA);
