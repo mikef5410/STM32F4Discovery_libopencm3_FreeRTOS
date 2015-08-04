@@ -31,13 +31,26 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
 #include <strings.h>
 #include <limits.h>
+#include <malloc.h>
 
+
+#include <libopencmsis/core_cm3.h>
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/cm3/scb.h>
+#include <libopencm3/cm3/systick.h>
+#include <libopencm3/cm3/nvic.h>
+#include <libopencm3/usb/usbd.h>
+
+#include "hiresTimer.h"
+  
 //#define CEXCEPTION_USE_CONFIG_FILE
 //#include "CException.h"
 

@@ -1,6 +1,5 @@
 #include "OSandPlatform.h"
 #include "debug_shell.h"
-#include "hiresTimer.h"
 
 #ifndef COUNTOF
 #define COUNTOF(A) (sizeof(A)/sizeof(A[0]))
@@ -41,11 +40,13 @@ static int cmd_timer(int argc, char **argv)
   (void) argc;
   (void) argv;
 
-  for (int j=0; j<10; j++) {
-    uint64_t start=hiresTimer_getTime();
-    vTaskDelay(100/portTICK_RATE_MS);
-    uint64_t delta = hiresTimer_getTime() - start;
-    myprintf(" 100 ms = %d us \n", tics2us(delta));
+  for (int j=0; j<3; j++) {
+    gpio_toggle(GPIOC, GPIO7);
+    volatile uint64_t start=hiresTimer_getTime();
+    vTaskDelay(10/portTICK_RATE_MS);
+    volatile int64_t delta = hiresTimer_getTime() - start;
+    //gpio_clear(GPIOC, GPIO7);
+    myprintf(" 10 ms = %d us \n", (int)tics2us(delta));
   }
   return(0);
 }

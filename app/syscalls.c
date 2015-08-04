@@ -4,11 +4,8 @@
 /*  for newlib                                                         */
 /*                                                                     */
 /***********************************************************************/
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <string.h>
 #include "OSandPlatform.h"
-#include <libopencm3/usb/usbd.h>
+#include <sys/stat.h>
 
 #define EOF (-1)
 extern usbd_device *CDCACM_dev;
@@ -134,9 +131,9 @@ int _read(int file __attribute__ ((unused)), char *ptr, int len)
 
 // Simple ring buffer for _write to use when there's no place
 // to put the outgoing string ...
-#define BUFSIZ 64
+#define BUFFER_SIZE 64
 static struct ringBuffer {
-  char buffer[BUFSIZ];
+  char buffer[BUFFER_SIZE];
   uint32_t rPtr;
   uint32_t wPtr;
   uint32_t size;
@@ -146,8 +143,8 @@ static void enq(char *ptr, int len)
 {
   for (int k=0; k<len; k++) {
     ringBuffer.buffer[ringBuffer.wPtr]=*(ptr + k);
-    ringBuffer.wPtr = (ringBuffer.wPtr + 1) % BUFSIZ;
-    ringBuffer.size = (ringBuffer.size + 1) % BUFSIZ;
+    ringBuffer.wPtr = (ringBuffer.wPtr + 1) % BUFFER_SIZE;
+    ringBuffer.size = (ringBuffer.size + 1) % BUFFER_SIZE;
   }
 }
 

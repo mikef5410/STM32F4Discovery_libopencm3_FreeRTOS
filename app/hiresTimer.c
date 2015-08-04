@@ -5,7 +5,7 @@
 #include <libopencm3/stm32/timer.h>
 
 //Our timer is clocked by core clock/2
-#define CORE_CLOCK_SCALE 2UL
+#define CORE_CLOCK_SCALE 4UL
 
 void init_hiresTimer(void)
 {
@@ -18,9 +18,11 @@ void init_hiresTimer(void)
    */
   timer_set_mode(HIRES_TIMER, TIM_CR1_CKD_CK_INT,
                  TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_set_prescaler(HIRES_TIMER,1);
+  timer_set_prescaler(HIRES_TIMER,1); //Divide-by-2
   timer_disable_preload(HIRES_TIMER);
   timer_continuous_mode(HIRES_TIMER);
+  timer_generate_event(HIRES_TIMER, TIM_EGR_UG); //Force register load
+  timer_disable_update_event(HIRES_TIMER);
   timer_enable_counter(HIRES_TIMER);
 
 }

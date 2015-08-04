@@ -17,14 +17,10 @@
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
 #include "OSandPlatform.h"
 
-#include <libopencm3/usb/usbd.h>
-#include <libopencm3/usb/cdc.h>
-#include <libopencm3/cm3/scb.h>
 #include <libopencm3/stm32/f4/nvic.h>
-#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/usb/cdc.h>
 
 xQueueHandle UARTinQ;
 usbd_device *CDCACM_dev;

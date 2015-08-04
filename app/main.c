@@ -1,15 +1,7 @@
 #define GLOBAL_OSandPlatform
 #include "OSandPlatform.h"
 
-#include <libopencmsis/core_cm3.h>
-#include <libopencm3/stm32/gpio.h>
-#include <libopencm3/stm32/rcc.h>
-#include <libopencm3/cm3/scb.h>
-#include <libopencm3/cm3/systick.h>
-#include <libopencm3/cm3/nvic.h>
-
 #include "debug_shell.h"
-#include "hiresTimer.h"
 
 #include <stdio.h>
 

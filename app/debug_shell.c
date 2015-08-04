@@ -5,8 +5,6 @@
 #undef GLOBAL_DEBUG_SHELL
 
 #include "OSandPlatform.h"
-#include <malloc.h>
-#include <libopencmsis/core_cm3.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -304,8 +302,9 @@ int cmd_mallocstats(int argc, char **argv)
   current=mallinfo();
   myprintf("Heap memory currently in use: %d bytes\n", current.uordblks);
   myprintf("Total free space: %d bytes\n",current.fordblks);
-  myprintf("Heap start: 0x%08x, Heap end: 0x%08x, size: %d\n",&__heap_start,&__heap_end,
-           &__heap_end - &__heap_start );
+  myprintf("Heap start: 0x%08x, Heap end: 0x%08x, size: %d\n",(unsigned int)&__heap_start,
+           (unsigned int)&__heap_end,
+           (int)(&__heap_end - &__heap_start) );
 
 #if 0  
   int tot=0;
