@@ -329,7 +329,10 @@ int cmd_reboot(int argc, char **argv)
 
 int cmd_identify(int argc, char **argv)
 {
+  char id[32];
+  desig_get_unique_id_as_string(id, 32);
   myprintf("STM32F4Discovery running FreeRTOS\n");
+  myprintf("SN: %s\n",id);
   return(0);
 }
 
