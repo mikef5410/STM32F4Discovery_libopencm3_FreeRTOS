@@ -1,7 +1,6 @@
 #include "OSandPlatform.h"
 #include "debug_shell.h"
 
-
 #ifndef COUNTOF
 #define COUNTOF(A) (sizeof(A)/sizeof(A[0]))
 #endif
@@ -36,6 +35,22 @@ static int cmd_hardfault(int argc, char **argv)
   return(0);
 }
 
+static int cmd_timer(int argc, char **argv)
+{
+  (void) argc;
+  (void) argv;
+
+  for (int j=0; j<3; j++) {
+    gpio_toggle(GPIOC, GPIO7);
+    volatile uint64_t start=hiresTimer_getTime();
+    vTaskDelay(10/portTICK_RATE_MS);
+    volatile int64_t delta = hiresTimer_getTime() - start;
+    //gpio_clear(GPIOC, GPIO7);
+    myprintf(" 10 ms = %d us \n", (int)tics2us(delta));
+  }
+  return(0);
+}
+
 
 dispatchEntry mainCommands[] = {
 //Context, Command,        ShortHelp,                                          command proc,  help proc
@@ -46,6 +61,7 @@ dispatchEntry mainCommands[] = {
   {"","build_sha1",       "                      Show SHA1 info", cmd_build_sha1, NULL},
 #endif
   {"","hardfault",        "                      Cause a hard fault", cmd_hardfault, NULL},
+  {"","timer",            "                      Test the hires timer", cmd_timer, NULL},
     //LAST ENTRY
   {NULL, NULL, NULL, NULL, NULL}
 };

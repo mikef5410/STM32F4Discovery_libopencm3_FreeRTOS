@@ -5,8 +5,6 @@
 #undef GLOBAL_DEBUG_SHELL
 
 #include "OSandPlatform.h"
-#include <malloc.h>
-#include <libopencmsis/core_cm3.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -296,11 +294,29 @@ int cmd_taskstats(int argc, char **argv)
   return(0);
 }
 
+extern char __heap_start;	/* Setup in our linker script */
+extern char __heap_end;
 int cmd_mallocstats(int argc, char **argv)
 {
   struct mallinfo current;
   current=mallinfo();
   myprintf("Heap memory currently in use: %d bytes\n", current.uordblks);
+  myprintf("Total free space: %d bytes\n",current.fordblks);
+  myprintf("Heap start: 0x%08x, Heap end: 0x%08x, size: %d\n",(unsigned int)&__heap_start,
+           (unsigned int)&__heap_end,
+           (int)(&__heap_end - &__heap_start) );
+
+#if 0  
+  int tot=0;
+  for (;;) {
+    myprintf("Allocating 1k bytes: ");
+    void *leak=malloc(1024);
+    myprintf(leak==0 ? "FAIL\n" : "OK\n");
+    if (leak==0) break;
+    tot++;
+  }
+  printf("Total: %d\n",tot);
+#endif  
   return(0);
 }
 
@@ -313,7 +329,10 @@ int cmd_reboot(int argc, char **argv)
 
 int cmd_identify(int argc, char **argv)
 {
+  char id[32];
+  desig_get_unique_id_as_string(id, 32);
   myprintf("STM32F4Discovery running FreeRTOS\n");
+  myprintf("SN: %s\n",id);
   return(0);
 }
 

@@ -25,7 +25,7 @@
          )
     (cscope-set-initial-directory builddir)
     (custom-set-variables cvar)
-    (setq gud-gdb-command-name (format "arm-none-eabi-gdb -f --interpreter=mi2 -n -x .gdbinit -cd %S LE320.elf" builddir))
+    (setq gud-gdb-command-name (format "arm-none-eabi-gdb -f --interpreter=mi2 -n -x .gdbinit -cd %S APP.elf" builddir))
     (print "OK." )
     (ecb-activate) ;;start ecb
     )
