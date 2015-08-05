@@ -35,7 +35,7 @@ static const struct usb_device_descriptor dev = {
   .bDeviceProtocol = 0,
   .bMaxPacketSize0 = 64,
   .idVendor = 0x0483,
-  .idProduct = 0x5740,
+  .idProduct = 0x5741,
   .bcdDevice = 0x0200,
   .iManufacturer = 1,
   .iProduct = 2,
@@ -154,7 +154,7 @@ static const struct usb_config_descriptor config = {
   .bConfigurationValue = 1,
   .iConfiguration = 0,
   .bmAttributes = 0x80,
-  .bMaxPower = 0x32,
+  .bMaxPower = 250,
 
   .interface = ifaces,
 };
@@ -162,7 +162,7 @@ static const struct usb_config_descriptor config = {
 static const char * usb_strings[] = {
   "Black Sphere Technologies",
   "CDC-ACM Demo",
-  "DEMO",
+  NULL,
 };
 
 /* Buffer to be used for control requests. */
@@ -247,10 +247,14 @@ void otg_fs_isr(void)
 portTASK_FUNCTION(vUSBCDCACMTask, pvParameters)
 {
   usbd_device *usbd_dev;
+  char id[24];
   (void)(pvParameters);//unused params
 
   UARTinQ = xQueueCreate( 256, sizeof(char));
-        
+
+  desig_get_unique_id_as_string(id,24);
+  usb_strings[2]=id;
+  
   usbd_dev = usbd_init(&otgfs_usb_driver, &dev, &config,
                        usb_strings, 3,
                        usbd_control_buffer, sizeof(usbd_control_buffer));
